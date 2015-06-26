@@ -12,6 +12,7 @@
  */
 
 #include <linux/export.h>
+#include <linux/ktime.h>
 #include <media/msm/vidc_type.h>
 #include <media/msm/vidc_init.h>
 #include "vcd.h"
@@ -358,6 +359,8 @@ u32 vcd_decode_frame(void *handle, struct vcd_frame_data *input_frame)
 	struct vcd_drv_ctxt *drv_ctxt;
 	u32 rc;
 
+//	ktime_t start, end, delta;
+
 	VCD_MSG_MED("vcd_decode_frame:");
 
 	if (!cctxt || cctxt->signature != VCD_SIGNATURE) {
@@ -373,12 +376,14 @@ u32 vcd_decode_frame(void *handle, struct vcd_frame_data *input_frame)
 	}
 
 	drv_ctxt = vcd_get_drv_context();
-
+	//start = ktime_get();
 	mutex_lock(&drv_ctxt->dev_mutex);
 
 	if (cctxt->clnt_state.state_table->ev_hdlr.decode_frame) {
+		
 		rc = cctxt->clnt_state.state_table->ev_hdlr.
 		    decode_frame(cctxt, input_frame);
+
 	} else {
 		VCD_MSG_ERROR("Unsupported API in client state %d",
 			      cctxt->clnt_state.state);
@@ -387,7 +392,10 @@ u32 vcd_decode_frame(void *handle, struct vcd_frame_data *input_frame)
 	}
 
 	mutex_unlock(&drv_ctxt->dev_mutex);
-
+	
+	//end = ktime_get();
+	//delta = ktime_sub(end, start);
+	//pr_info("%s, user_vaddr:%lx, size: %d Time: %lld, Haibo\n", __func__, input_frame->virtual, input_frame->data_len, ktime_to_us(delta));
 	return rc;
 
 }

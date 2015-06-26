@@ -207,7 +207,7 @@ static int mipi_JDI_lcd_on(struct platform_device *pdev)
 	cmdreq_JDI.cb = NULL;
 	mipi_dsi_cmdlist_put(&cmdreq_JDI);
 
-	pr_info("%s, JDI display on command-\n", __func__);
+	pr_info("%s, JDI display on command- Haibo\n", __func__);
 
 	pr_info("%s-\n", __func__);
 	return 0;
@@ -238,7 +238,7 @@ static int mipi_JDI_lcd_off(struct platform_device *pdev)
 	cmdreq_JDI.rlen = 0;
 	cmdreq_JDI.cb = NULL;
 	mipi_dsi_cmdlist_put(&cmdreq_JDI);
-	pr_info("%s, JDI display off command-\n", __func__);
+	pr_info("%s, JDI display off command- Haibo\n", __func__);
 
 	pr_info("%s-\n", __func__);
 	return 0;

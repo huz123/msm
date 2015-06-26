@@ -28,6 +28,7 @@
 #include <linux/android_pmem.h>
 #include <linux/clk.h>
 #include <linux/timer.h>
+#include <linux/ktime.h>
 #include <mach/msm_subsystem_map.h>
 #include <media/msm/vidc_type.h>
 #include <media/msm/vcd_api.h>
@@ -1630,12 +1631,12 @@ static u32 vid_dec_decode_frame(struct video_client_ctx *client_ctx,
 	u32 vcd_status = VCD_ERR_FAIL;
 	u32 ion_flag = 0;
 	struct ion_handle *buff_handle = NULL;
+	ktime_t start, end, delta;
 
 	if (!client_ctx || !input_frame_info)
 		return false;
 
 	user_vaddr = (unsigned long)input_frame_info->bufferaddr;
-
 	if (vidc_lookup_addr_table(client_ctx, BUFFER_TYPE_INPUT,
 				      true, &user_vaddr, &kernel_vaddr,
 				      &phy_addr, &pmem_fd, &file,
@@ -1672,13 +1673,20 @@ static u32 vid_dec_decode_frame(struct video_client_ctx *client_ctx,
 				ION_IOC_CLEAN_CACHES);
 			}
 		}
+		start = ktime_get();
 		vcd_status = vcd_decode_frame(client_ctx->vcd_handle,
 					      &vcd_input_buffer);
+		end = ktime_get();
+		delta = ktime_sub(end, start);
+		pr_info("%s, user_vaddr:%lx, size: %d, time: %lld, Haibo", 
+			__func__, user_vaddr, vcd_input_buffer.data_len, ktime_to_us(delta));
 		if (!vcd_status)
 			return true;
 		else {
-			ERR("%s(): vcd_decode_frame failed = %u\n", __func__,
-			    vcd_status);
+/*			ERR("%s(): vcd_decode_frame failed = %u\n", __func__,
+			    vcd_status);*/
+			pr_info("%s(): vcd_decode_frame failed = %u\n", __func__,
+			    vcd_status);			
 			return false;
 		}
 
@@ -2042,6 +2050,14 @@ static long vid_dec_ioctl(struct file *file,
 	case VDEC_IOCTL_DECODE_FRAME:
 	{
 		struct vdec_input_frameinfo input_frame_info;
+		//struct timespec ts;
+		/**time_t sec, dsec;
+		long   nsec, dnsec;
+		double sdelta, udelta;
+		**/
+		ktime_t start, end, delta;
+		//double delta_d = 0;
+		signed long long delta_s64 = 0; 	
 		u8 *desc_buf = NULL;
 		u32 desc_size = 0;
 		DBG("VDEC_IOCTL_DECODE_FRAME\n");
@@ -2066,9 +2082,27 @@ static long vid_dec_ioctl(struct file *file,
 			} else
 				return -EINVAL;
 		}
+		//getnstimeofday(&ts);
+		//sec  = ts.tv_sec;
+		//nsec = ts.tv_nsec; 
+		start = ktime_get();
 		result = vid_dec_decode_frame(client_ctx, &input_frame_info,
 					desc_buf, desc_size);
-
+		end = ktime_get();
+		delta = ktime_sub(end, start);
+		/**
+		getnstimeofday(&ts);
+		dsec = ts.tv_sec - sec;
+		dnsec = ts.tv_nsec - nsec;
+		sdelta = 0.0;
+		udelta = 0.0;
+		
+		//sdelta = dsec;
+		//udelta = (dnsec)/1000;
+		**/
+		delta_s64 = ktime_to_us(delta);
+		delta_s64 = delta_s64;
+//		pr_info("%s, VDEC_IOCTL_DECODE_FRAME: Haibo, size:%d, addr:%p, dus: %lld\n", __func__, desc_size, input_frame_info.desc_addr, delta_s64);
 		if (!result) {
 			kfree(desc_buf);
 			desc_buf = NULL;
@@ -2737,6 +2771,7 @@ static int __init vid_dec_init(void)
 {
 	int rc = 0, i = 0, j = 0;
 	struct device *class_devp;
+	pr_info("%s, msm_vidc_dec: Inside Haibo\n", __func__);
 
 	DBG("msm_vidc_dec: Inside %s()", __func__);
 	vid_dec_device_p = kzalloc(sizeof(struct vid_dec_dev), GFP_KERNEL);
